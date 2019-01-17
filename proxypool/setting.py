@@ -12,7 +12,9 @@ REDIS_KEY = 'proxies'
 # 代理分数
 MAX_SCORE = 100
 MIN_SCORE = 0
+# 初始分数
 INITIAL_SCORE = 10
+STEP_SCORE = 1
 
 VALID_STATUS_CODES = [200, 302]
 
@@ -29,7 +31,7 @@ TEST_URL = 'http://www.baidu.com'
 
 # API配置
 API_HOST = '0.0.0.0'
-API_PORT = 5555
+API_PORT = 5000
 
 # 开关
 TESTER_ENABLED = True

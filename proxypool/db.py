@@ -1,7 +1,7 @@
 import redis
 from proxypool.error import PoolEmptyError
 from proxypool.setting import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, REDIS_KEY
-from proxypool.setting import MAX_SCORE, MIN_SCORE, INITIAL_SCORE
+from proxypool.setting import MAX_SCORE, MIN_SCORE, INITIAL_SCORE, STEP_SCORE
 from random import choice
 import re
 
@@ -23,11 +23,11 @@ class RedisClient(object):
         :param score: 分数
         :return: 添加结果
         """
-        if not re.match('\d+\.\d+\.\d+\.\d+\:\d+', proxy):
+        if not re.match(r'\d+\.\d+\.\d+\.\d+\:\d+', proxy):
             print('代理不符合规范', proxy, '丢弃')
             return
         if not self.db.zscore(REDIS_KEY, proxy):
-            return self.db.zadd(REDIS_KEY, score, proxy)
+            return self.db.zadd(REDIS_KEY, {proxy:score})
     
     def random(self):
         """
@@ -52,8 +52,12 @@ class RedisClient(object):
         """
         score = self.db.zscore(REDIS_KEY, proxy)
         if score and score > MIN_SCORE:
-            print('代理', proxy, '当前分数', score, '减1')
-            return self.db.zincrby(REDIS_KEY, proxy, -1)
+            if score == MAX_SCORE:
+                reset_score = INITIAL_SCORE - STEP_SCORE
+                return self.db.zadd(REDIS_KEY, {proxy: reset_score})
+            print('代理', proxy, '当前分数', score, '减', STEP_SCORE)
+            step = - STEP_SCORE
+            return self.db.zincrby(REDIS_KEY, step, proxy)
         else:
             print('代理', proxy, '当前分数', score, '移除')
             return self.db.zrem(REDIS_KEY, proxy)
@@ -73,7 +77,7 @@ class RedisClient(object):
         :return: 设置结果
         """
         print('代理', proxy, '可用，设置为', MAX_SCORE)
-        return self.db.zadd(REDIS_KEY, MAX_SCORE, proxy)
+        return self.db.zadd(REDIS_KEY, {proxy:MAX_SCORE})
     
     def count(self):
         """
