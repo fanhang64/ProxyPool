@@ -1,6 +1,6 @@
 import json
 import re
-from .utils import get_page
+from .utils import get_page, get_json
 from pyquery import PyQuery as pq
 
 
@@ -43,7 +43,7 @@ class Crawler(object, metaclass=ProxyMetaclass):
                     port = tr.find('td:nth-child(2)').text()
                     yield ':'.join([ip, port])
 
-    def crawl_ip3366(self):
+    def crawl_ip3366_free(self):
         for page in range(1, 4):
             start_url = 'http://www.ip3366.net/free/?stype=1&page={}'.format(page)
             html = get_page(start_url)
@@ -69,15 +69,16 @@ class Crawler(object, metaclass=ProxyMetaclass):
 
     def crawl_xicidaili(self):
         for i in range(1, 3):
-            start_url = 'http://www.xicidaili.com/nn/{}'.format(i)
+            start_url = 'https://www.xicidaili.com/nn/{}'.format(i)
             headers = {
                 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
                 'Cookie':'_free_proxy_session=BAh7B0kiD3Nlc3Npb25faWQGOgZFVEkiJWRjYzc5MmM1MTBiMDMzYTUzNTZjNzA4NjBhNWRjZjliBjsAVEkiEF9jc3JmX3Rva2VuBjsARkkiMUp6S2tXT3g5a0FCT01ndzlmWWZqRVJNek1WanRuUDBCbTJUN21GMTBKd3M9BjsARg%3D%3D--2a69429cb2115c6a0cc9a86e0ebe2800c0d471b3',
                 'Host':'www.xicidaili.com',
-                'Referer':'http://www.xicidaili.com/nn/3',
+                'Referer':'https://www.xicidaili.com/nn/3',
                 'Upgrade-Insecure-Requests':'1',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko Chrome/63.0.3239.108 Safari/537.36',
             }
-            html = get_page(start_url, options=headers)
+            html = get_page(start_url, **headers)
             if html:
                 find_trs = re.compile('<tr class.*?>(.*?)</tr>', re.S)
                 trs = find_trs.findall(html)
@@ -135,7 +136,7 @@ class Crawler(object, metaclass=ProxyMetaclass):
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.108 Safari/537.36',
         }
-        html = get_page(start_url, options=headers)
+        html = get_page(start_url, **headers)
         if html:
             ip_address = re.compile('<span><li>(\d+\.\d+\.\d+\.\d+)</li>.*?<li class=\"port.*?>(\d+)</li>', re.S)
             re_ip_address = ip_address.findall(html)
@@ -143,5 +144,44 @@ class Crawler(object, metaclass=ProxyMetaclass):
                 result = address + ':' + port
                 yield result.replace(' ', '')
 
-
-            
+    def crawl_freeproxylist(self):
+        """
+        获取free-proxy-list代理
+        """
+        start_url = "https://free-proxy-list.net/"
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.98 Chrome/71.0.3578.98 Safari/537.36'
+        }
+        html = get_page(start_url, **headers)
+        if html:
+            pattern = re.compile('<tr>(.*?)</tr>', re.S)
+            trs = pattern.findall(html)
+            for s in trs:
+                ip = re.findall(r"<td>(\d+\.\d+\.\d+\.\d+)</td>", s)
+                port = re.findall(r"<td>(\d+)</td>", s)
+                for address, port in zip(ip, port):
+                    result = address + ":" + port
+                    yield result.replace(' ', '')
+    
+    def crawl_proxtlist(self):
+        """
+        获取proxylist代理
+        """
+        start_url = "https://www.proxy-list.download/api/v0/get?l=en&t=http"
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+            'Referer': 'https://www.proxy-list.download/HTTP',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.98 Chrome/71.0.3578.98 Safari/537.36'
+        }
+        html = get_json(start_url, **headers)
+        if html:
+            html = html[0]
+            proxies = html.get('LISTA')
+            for p in proxies:
+                ip = p.get('IP')
+                port = p.get('PORT')
+                result = ip + ":" + port
+                yield result.replace(' ', '')
