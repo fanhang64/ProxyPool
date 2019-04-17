@@ -7,14 +7,14 @@ import re
 
 
 class RedisClient(object):
-    def __init__(self, host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD):
+    def __init__(self, host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=0):
         """
         初始化
         :param host: Redis 地址
         :param port: Redis 端口
         :param password: Redis密码
         """
-        self.db = redis.StrictRedis(host=host, port=port, password=password, decode_responses=True)
+        self.db = redis.StrictRedis(host=host, port=port, password=password, decode_responses=True, db=db)
     
     def add(self, proxy, score=INITIAL_SCORE):
         """
