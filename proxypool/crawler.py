@@ -24,25 +24,6 @@ class Crawler(object, metaclass=ProxyMetaclass):
             proxies.append(proxy)
         return proxies
        
-    def crawl_daili66(self, page_count=4):
-        """
-        获取代理66
-        :param page_count: 页码
-        :return: 代理
-        """
-        start_url = 'http://www.66ip.cn/{}.html'
-        urls = [start_url.format(page) for page in range(1, page_count + 1)]
-        for url in urls:
-            print('Crawling', url)
-            html = get_page(url)
-            if html:
-                doc = pq(html)
-                trs = doc('.containerbox table tr:gt(0)').items()
-                for tr in trs:
-                    ip = tr.find('td:nth-child(1)').text()
-                    port = tr.find('td:nth-child(2)').text()
-                    yield ':'.join([ip, port])
-
     def crawl_ip3366_free(self):
         for page in range(1, 4):
             start_url = 'http://www.ip3366.net/free/?stype=1&page={}'.format(page)
@@ -143,27 +124,6 @@ class Crawler(object, metaclass=ProxyMetaclass):
             for address, port in re_ip_address:
                 result = address + ':' + port
                 yield result.replace(' ', '')
-
-    def crawl_freeproxylist(self):
-        """
-        获取free-proxy-list代理
-        """
-        start_url = "https://free-proxy-list.net/"
-        headers = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.98 Chrome/71.0.3578.98 Safari/537.36'
-        }
-        html = get_page(start_url, **headers)
-        if html:
-            pattern = re.compile('<tr>(.*?)</tr>', re.S)
-            trs = pattern.findall(html)
-            for s in trs:
-                ip = re.findall(r"<td>(\d+\.\d+\.\d+\.\d+)</td>", s)
-                port = re.findall(r"<td>(\d+)</td>", s)
-                for address, port in zip(ip, port):
-                    result = address + ":" + port
-                    yield result.replace(' ', '')
     
     def crawl_proxtlist(self):
         """
